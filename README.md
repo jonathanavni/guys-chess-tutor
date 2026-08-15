@@ -1,5 +1,7 @@
 # ♞ Guy's Chess Tutor
 
+**Play it:** https://jonathanavni.github.io/guys-chess-tutor/
+
 An interactive chess opening tutor built for a 9‑year‑old (and his friends). Pick an opening and the tutor:
 
 1. **Introduces it** — what it is, why you'd play it, three ideas to remember.

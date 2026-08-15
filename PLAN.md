@@ -5,7 +5,7 @@
 **v0.1 shipped locally.** Full loop works: choose opening → intro → guided walkthrough → practice (learner plays, tutor checks + hints, plays opponent) → 3‑question quiz → completion with stars. 8 openings (5 White, 3 Black). Progress persists in localStorage. Responsive (tutor above board on phones). Zero console errors. `npm run build` passes (validator + typecheck).
 
 **Not yet done**
-- [ ] Deploy (Vercel or GitHub Pages) — needs the user's go‑ahead; repo has no remote yet
+- [x] Deployed to GitHub Pages: https://jonathanavni.github.io/guys-chess-tutor/ (auto‑deploys on push to `main` via `.github/workflows/deploy.yml`)
 - [ ] Guy plays it for real → collect feedback on tone, pace, difficulty
 
 **Next up (candidates — pick with Jonathan)**
@@ -31,4 +31,5 @@
 - **2026-08-15 — Content lives in one TS file** (`src/data/openings.ts`) validated by a script that runs in `build`. A CMS/JSON loader is not worth it at 8–20 openings.
 - **2026-08-15 — Practice = strict main line.** Any legal non‑book move counts as a "slip" and triggers escalating hints (text → highlight piece → draw arrow). Sidelines are a later feature.
 - **2026-08-15 — Stars**: ★ learned (walkthrough done) · ★★ practiced with ≤2 slips · ★★★ perfect practice + perfect quiz.
+- **2026-08-15 — Hosting: GitHub Pages** (repo `jonathanavni/guys-chess-tutor`, public). Chosen over Vercel because `gh` was already authenticated; Vercel CLI wasn't. Vite `base` comes from `VITE_BASE` env in CI so local/Vercel keep `/`.
 - **2026-08-15 — Borrowed from tinyharness/skillhub**: CLAUDE.md principle style, `/start` `/wrapup` `/review` commands, PLAN.md as the single source of truth.
