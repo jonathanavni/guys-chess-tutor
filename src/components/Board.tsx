@@ -4,10 +4,10 @@ import type { Arrow, Side } from "../data/types";
 import { legalTargets } from "../lib/chess";
 
 const ARROW_COLORS: Record<NonNullable<Arrow["kind"]> | "default", string> = {
-  default: "rgba(21, 128, 61, 0.85)", // green
-  idea: "rgba(21, 128, 61, 0.85)",
-  threat: "rgba(220, 38, 38, 0.8)",
-  note: "rgba(37, 99, 235, 0.8)",
+  default: "rgba(13, 148, 136, 0.9)", // teal
+  idea: "rgba(13, 148, 136, 0.9)",
+  threat: "rgba(239, 68, 68, 0.85)",
+  note: "rgba(79, 70, 229, 0.8)",
 };
 
 export interface BoardProps {
@@ -51,19 +51,22 @@ export function Board({
   const squareStyles = useMemo(() => {
     const s: Record<string, CSSProperties> = {};
     if (lastMove) {
-      s[lastMove.from] = { background: "rgba(255, 213, 79, 0.45)" };
-      s[lastMove.to] = { background: "rgba(255, 213, 79, 0.6)" };
+      s[lastMove.from] = { backgroundColor: "rgba(255, 200, 70, 0.5)" };
+      s[lastMove.to] = { backgroundColor: "rgba(255, 200, 70, 0.65)" };
     }
     for (const h of highlights)
-      s[h] = { ...s[h], boxShadow: "inset 0 0 0 4px rgba(37, 99, 235, 0.55)" };
+      s[h] = { ...s[h], boxShadow: "inset 0 0 0 4px rgba(79, 70, 229, 0.55)" };
     for (const h of hintSquares)
       s[h] = {
         ...s[h],
-        background: "rgba(52, 211, 153, 0.55)",
+        backgroundColor: "rgba(45, 212, 191, 0.6)",
         animation: "pulse 1.1s ease-in-out infinite",
       };
     if (selected)
-      s[selected] = { ...s[selected], background: "rgba(52, 211, 153, 0.7)" };
+      s[selected] = {
+        ...s[selected],
+        backgroundColor: "rgba(45, 212, 191, 0.7)",
+      };
     for (const t of targets)
       s[t] = {
         ...s[t],
@@ -82,19 +85,19 @@ export function Board({
     allowDrawingArrows: false,
     showNotation: true,
     boardStyle: {
-      borderRadius: 12,
+      borderRadius: 16,
       overflow: "hidden",
-      boxShadow: "0 12px 32px rgba(40, 30, 10, 0.18)",
+      boxShadow: "0 20px 50px -12px rgba(15, 30, 60, 0.35)",
     },
-    darkSquareStyle: { backgroundColor: "#b58863" },
-    lightSquareStyle: { backgroundColor: "#f0d9b5" },
+    darkSquareStyle: { backgroundColor: "#86a2b6" },
+    lightSquareStyle: { backgroundColor: "#e4ebf1" },
     darkSquareNotationStyle: {
-      color: "#f0d9b5",
+      color: "#e4ebf1",
       fontWeight: 600,
       fontSize: "0.7rem",
     },
     lightSquareNotationStyle: {
-      color: "#b58863",
+      color: "#86a2b6",
       fontWeight: 600,
       fontSize: "0.7rem",
     },
@@ -127,7 +130,7 @@ export function Board({
   };
 
   return (
-    <div className={`board-wrap${shake ? " shake" : ""}`}>
+    <div className={`board-wrap${shake ? " shake" : ""}`} dir="ltr">
       <Chessboard options={options} />
     </div>
   );

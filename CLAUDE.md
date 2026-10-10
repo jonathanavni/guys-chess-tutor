@@ -33,7 +33,11 @@ Audience beyond Guy: family and friends he shares it with. So it must feel polis
 ```
 src/
   data/types.ts        Opening / OpeningMove / QuizQuestion types
-  data/openings.ts     ALL lesson content (moves, explanations, hints, quizzes)
+  data/openings.ts     ALL lesson content (moves, explanations, hints, quizzes) — array order = learning path
+  data/openings.he.ts  Hebrew text for every opening (same shape, keyed by id)
+  data/strings.tsx     every UI string, English + Hebrew
+  lib/i18n.ts          language store (EN/HE, RTL), useT(), localize(opening)
+  lib/celebrate.ts     confetti + synthesized fanfare, mute toggle
   lib/chess.ts         chess.js helpers (fenAtPly, tryMove, sanToSquares…)
   lib/progress.ts      localStorage progress + stars + hooks
   lib/router.ts        hash router
@@ -50,8 +54,10 @@ scripts/validate-openings.ts   legality + content checks (runs in `npm run build
 ## Adding an opening
 
 1. Add an entry to `OPENINGS` in `src/data/openings.ts`. Keep lines to ~10–14 plies. Every **learner‑side** move needs a `hint`; every move needs an `explanation`. Add arrows (`idea` green, `threat` red, `note` blue) where they make the idea visible. 3 quiz questions about *why*.
-2. `npm run validate` — must pass (legal SAN, valid squares, hints present, quiz answers in range).
-3. Play the lesson in the browser as a kid would.
+2. Place it in the array by difficulty (the array is the learning path; validator enforces non-decreasing difficulty).
+3. Add the Hebrew text to `OPENINGS_HE` in `src/data/openings.he.ts`: same number of moves, hints on the same moves, quiz options in the same order. Keep moves/squares in English letters; never write move numbers ("1.e4") or "+"/"#" after a move in Hebrew text — they render on the wrong side in RTL.
+4. `npm run validate` — must pass (legal SAN, valid squares, hints present, quiz answers in range, Hebrew in sync).
+5. Play the lesson in the browser as a kid would — in both languages.
 
 ## Commands
 

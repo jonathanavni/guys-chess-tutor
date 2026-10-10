@@ -47,3 +47,17 @@ export interface Opening {
   quiz: QuizQuestion[];
   funFact?: string;
 }
+
+/** The translatable text of an opening (everything except moves' SAN, arrows, etc.). */
+export interface OpeningText {
+  name: string;
+  subtitle: string;
+  tagline: string;
+  intro: string[];
+  keyIdeas: string[];
+  /** Same length/order as Opening.moves; `hint` exactly where the English has one. */
+  moves: { explanation: string; hint?: string }[];
+  /** Same order as Opening.quiz; options in the same order (answer index is shared). */
+  quiz: { question: string; options: string[]; explanation: string }[];
+  funFact?: string;
+}

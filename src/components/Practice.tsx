@@ -18,6 +18,7 @@ import { recordPractice } from "../lib/progress";
 import { Board } from "./Board";
 import { Tutor, type Mood } from "./Tutor";
 import { MoveList } from "./MoveList";
+import { useT } from "../lib/i18n";
 
 type Status =
   | {
@@ -41,6 +42,7 @@ export function Practice({
   opening: Opening;
   onDone: (mistakes: number) => void;
 }) {
+  const t = useT();
   const fens = useMemo(() => allFens(opening), [opening]);
   const total = opening.moves.length;
   const learner = opening.side;
@@ -164,89 +166,65 @@ export function Practice({
   let title: ReactNode = "";
   let body: ReactNode = null;
 
-  const youAre = learner === "white" ? "White" : "Black";
-  const opp = learner === "white" ? "Black" : "White";
+  const opponent = learner === "white" ? "black" : "white";
+  const youAre = t.side(learner);
+  const opp = t.side(opponent);
+  const san = (text: string) => <span className="san">{text}</span>;
 
   if (status.kind === "done") {
     mood = "star";
     title =
       mistakes === 0
-        ? "Perfect! You played the whole line without a single slip. 🎉"
+        ? t.perfectRun
         : mistakes <= 2
-          ? `Great job — you finished the line with only ${mistakes} slip${mistakes === 1 ? "" : "s"}.`
-          : `You made it to the end! ${mistakes} slips this time — one more run and it'll stick.`;
-    body = (
-      <p>
-        You now know the first {Math.ceil(total / 2)} moves of the{" "}
-        {opening.name}. Let's check you understand <em>why</em> they're played —
-        a quick 3‑question quiz.
-      </p>
-    );
+          ? t.greatJob(mistakes)
+          : t.madeIt(mistakes);
+    body = t.knowFirst(Math.ceil(total / 2), opening.name);
   } else if (status.kind === "opponent") {
     mood = "neutral";
     const played = opening.moves[ply - 1];
     title = (
       <span>
-        <span className={`side-chip ${opp === "White" ? "w" : "b"}`}>
-          {opp}
-        </span>{" "}
-        plays {moveLabel(ply - 1)} <span className="san">{played.san}</span>
+        {t.plays(
+          <span className={`side-chip ${opponent === "white" ? "w" : "b"}`}>
+            {opp}
+          </span>,
+          san(`${moveLabel(ply - 1)} ${played.san}`),
+        )}
       </span>
     );
     body = (
       <>
         <p>{status.explanation}</p>
-        <p className="prompt">Your move! What do we play here?</p>
+        <p className="prompt">{t.yourMovePrompt}</p>
       </>
     );
   } else if (status.kind === "correct") {
     mood = "happy";
-    title = (
-      <span>
-        ✓ <span className="san">{lastLearnerMove?.san}</span> — that's it!
-      </span>
-    );
+    title = <span>{t.thatsIt(san(lastLearnerMove?.san ?? ""))}</span>;
     body = <p>{lastLearnerMove?.explanation}</p>;
   } else {
     // your-turn
     const { wrongTries, hintLevel: hl, lastWrong } = status;
     if (!isLearnerTurn) {
       mood = "neutral";
-      title = `${opp} moves first — watch the board.`;
-      body = <p>Then it's your turn to play {youAre}'s moves from memory.</p>;
+      title = t.oppFirst(opp);
+      body = <p>{t.thenYourTurn(youAre)}</p>;
     } else if (wrongTries === 0 && hl === 0) {
       mood = "think";
-      title =
-        ply === 0
-          ? `You're ${youAre}. Play the first move of the ${opening.name}.`
-          : "Your move!";
-      body = (
-        <p>
-          {ply === 0
-            ? "Drag a piece, or tap it and then tap the square. Stuck? Ask for a hint."
-            : `What does ${youAre} play here? Take your time.`}
-        </p>
-      );
+      title = ply === 0 ? t.firstMove(youAre, opening.name) : t.yourMove;
+      body = <p>{ply === 0 ? t.dragHelp : t.whatDoes(youAre)}</p>;
     } else {
       mood = wrongTries > 0 ? "oops" : "think";
       title =
         wrongTries > 0
-          ? `Hmm, ${lastWrong} isn't the ${opening.name} move.`
-          : "Here's a hint.";
+          ? t.notTheMove(san(lastWrong ?? ""), opening.name)
+          : t.hereHint;
       body = (
         <>
           {hl >= 1 && bookMove?.hint && <p>💡 {bookMove.hint}</p>}
-          {hl >= 2 && bookMove && (
-            <p>
-              The move is <span className="san">{bookMove.san}</span> — I've
-              drawn it on the board. Play it and we'll keep going.
-            </p>
-          )}
-          {hl < 2 && (
-            <p className="muted">
-              Look at the highlighted piece. Still stuck? Ask for another hint.
-            </p>
-          )}
+          {hl >= 2 && bookMove && <p>{t.theMoveIs(san(bookMove.san))}</p>}
+          {hl < 2 && <p className="muted">{t.lookHighlighted}</p>}
         </>
       );
     }
@@ -269,15 +247,14 @@ export function Practice({
         />
         <div className="board-controls">
           <button className="btn ghost" onClick={restart}>
-            ↺ Restart
+            {t.restart}
           </button>
           <span className="board-counter">
-            {Math.min(ply, total)} / {total} · {mistakes} slip
-            {mistakes === 1 ? "" : "s"}
+            {Math.min(ply, total)} / {total} · {t.slips(mistakes)}
           </span>
           {status.kind === "done" ? (
             <button className="btn primary" onClick={() => onDone(mistakes)}>
-              Take the quiz →
+              {t.takeQuiz}
             </button>
           ) : (
             <button
@@ -288,7 +265,7 @@ export function Practice({
                 (status.kind === "your-turn" && status.hintLevel >= 2)
               }
             >
-              💡 Hint
+              {t.hint}
             </button>
           )}
         </div>
@@ -300,18 +277,18 @@ export function Practice({
         </Tutor>
 
         <div className="side-card">
-          <div className="side-card-title">Moves so far</div>
+          <div className="side-card-title">{t.movesSoFar}</div>
           <MoveList opening={opening} ply={ply} revealUpTo={ply} />
         </div>
 
-        <div className="side-card">
-          <div className="side-card-title">Key ideas</div>
+        <details className="side-card collapsible">
+          <summary className="side-card-title">{t.keyIdeas}</summary>
           <ul className="ideas">
             {opening.keyIdeas.map((k) => (
               <li key={k}>{k}</li>
             ))}
           </ul>
-        </div>
+        </details>
       </div>
     </div>
   );

@@ -1,15 +1,31 @@
 import { useState } from "react";
 import { OPENINGS } from "../data/openings";
-import type { Side } from "../data/types";
-import { resetAllProgress, starsFor, useProgress } from "../lib/progress";
+import type { Opening, Side } from "../data/types";
+import { fenAtPly } from "../lib/chess";
+import { localize, useLang, useOpenings, useT } from "../lib/i18n";
+import {
+  resetAllProgress,
+  starsFor,
+  upNext,
+  useProgress,
+} from "../lib/progress";
 import { navigate } from "../lib/router";
+import { Board } from "./Board";
+import { Stars } from "./Stars";
 
 type Filter = "all" | Side;
 
+const LEVELS: Opening["difficulty"][] = [1, 2, 3];
+const HERO_FEN = fenAtPly(OPENINGS[0], 5);
+
 export function Home() {
+  const t = useT();
+  const lang = useLang();
+  const openings = useOpenings();
   const progress = useProgress();
   const [filter, setFilter] = useState<Filter>("all");
-  const list = OPENINGS.filter((o) => filter === "all" || o.side === filter);
+  const nextRaw = upNext(progress);
+  const next = nextRaw && localize(nextRaw, lang);
 
   const learnedCount = OPENINGS.filter((o) => progress[o.id]?.learned).length;
   const totalStars = OPENINGS.reduce(
@@ -17,73 +33,56 @@ export function Home() {
       n + starsFor(progress[o.id] ?? { learned: false, practiceRuns: 0 }),
     0,
   );
-  const lastPlayed = OPENINGS.map((o) => ({ o, t: progress[o.id]?.lastPlayed }))
-    .filter((x) => x.t)
-    .sort((a, b) => (a.t! < b.t! ? 1 : -1))[0]?.o;
+  const maxStars = OPENINGS.length * 3;
 
   return (
     <div className="home">
       <section className="hero">
         <div className="hero-text">
-          <div className="eyebrow">♞ Guy's Chess Tutor</div>
           <h1>
-            Learn chess openings <span className="accent">like a pro.</span>
+            {t.heroTitle} <span className="accent">{t.heroAccent}</span>
           </h1>
-          <p className="lede">
-            Pick an opening. I'll walk you through every move and explain{" "}
-            <em>why</em> it's played. Then you play it yourself while I check
-            your moves — and we finish with a quick quiz to make sure it sticks.
-          </p>
-          <div className="hero-stats">
-            <div className="stat">
-              <div className="stat-num">{learnedCount}</div>
-              <div className="stat-label">of {OPENINGS.length} learned</div>
+          <p className="lede">{t.heroLede}</p>
+          {next ? (
+            <button
+              className="btn primary big"
+              onClick={() => navigate({ page: "learn", id: next.id })}
+            >
+              {learnedCount === 0
+                ? t.startWith(next.name)
+                : t.upNextCta(next.name)}{" "}
+              {next.emoji} {t.fwd}
+            </button>
+          ) : (
+            <p className="all-done">{t.allMastered}</p>
+          )}
+          <div className="progress-strip">
+            <div
+              className="progress-bar"
+              role="progressbar"
+              aria-valuenow={totalStars}
+              aria-valuemax={maxStars}
+              aria-label={t.starsEarned}
+            >
+              <span style={{ width: `${(totalStars / maxStars) * 100}%` }} />
             </div>
-            <div className="stat">
-              <div className="stat-num">
-                {totalStars}
-                <span className="stat-star">★</span>
-              </div>
-              <div className="stat-label">of {OPENINGS.length * 3} stars</div>
+            <div className="progress-text">
+              {t.progress(learnedCount, OPENINGS.length, totalStars, maxStars)}
             </div>
-            {lastPlayed && (
-              <button
-                className="btn primary"
-                onClick={() => navigate({ page: "learn", id: lastPlayed.id })}
-              >
-                Continue {lastPlayed.name} →
-              </button>
-            )}
           </div>
         </div>
         <div className="hero-art" aria-hidden>
-          <div className="mini-board">
-            {Array.from({ length: 64 }, (_, i) => {
-              const r = Math.floor(i / 8);
-              const c = i % 8;
-              return <span key={i} className={(r + c) % 2 ? "d" : "l"} />;
-            })}
-            {[
-              { p: "♞", x: 4, y: 3 },
-              { p: "♝", x: 2, y: 4 },
-              { p: "♙", x: 4, y: 4 },
-              { p: "♟", x: 3, y: 3 },
-            ].map((pc) => (
-              <span
-                key={pc.p}
-                className="mini-piece"
-                style={{ left: `${pc.x * 12.5}%`, top: `${pc.y * 12.5}%` }}
-              >
-                {pc.p}
-              </span>
-            ))}
-          </div>
+          <Board
+            fen={HERO_FEN}
+            orientation="white"
+            arrows={[{ from: "c4", to: "f7", kind: "threat" }]}
+          />
         </div>
       </section>
 
       <section className="catalog">
         <div className="catalog-head">
-          <h2>Choose an opening</h2>
+          <h2>{t.learningPath}</h2>
           <div className="segmented" role="tablist">
             {(["all", "white", "black"] as Filter[]).map((f) => (
               <button
@@ -93,85 +92,95 @@ export function Home() {
                 className={filter === f ? "on" : ""}
                 onClick={() => setFilter(f)}
               >
-                {f === "all"
-                  ? "All"
-                  : f === "white"
-                    ? "♔ Play as White"
-                    : "♚ Play as Black"}
+                {t.filters[f]}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="cards">
-          {list.map((o) => {
-            const p = progress[o.id] ?? { learned: false, practiceRuns: 0 };
-            const stars = starsFor(p);
-            const status =
-              stars === 3 ? "Mastered" : p.learned ? "In progress" : "New";
-            return (
-              <button
-                key={o.id}
-                type="button"
-                className={`card side-${o.side}`}
-                onClick={() => navigate({ page: "learn", id: o.id })}
-              >
-                <div className="card-top">
-                  <span className="card-emoji" aria-hidden>
-                    {o.emoji}
-                  </span>
-                  <span
-                    className={`badge ${status.toLowerCase().replace(" ", "-")}`}
-                  >
-                    {status}
-                  </span>
-                </div>
-                <h3>{o.name}</h3>
-                <div className="card-sub">{o.subtitle}</div>
-                <p className="card-tag">{o.tagline}</p>
-                <div className="card-foot">
-                  <span
-                    className={`side-chip ${o.side === "white" ? "w" : "b"}`}
-                  >
-                    {o.side === "white" ? "White" : "Black"}
-                  </span>
-                  <span
-                    className="difficulty"
-                    title={`Difficulty ${o.difficulty} of 3`}
-                  >
-                    {[1, 2, 3].map((d) => (
-                      <i key={d} className={d <= o.difficulty ? "on" : ""} />
-                    ))}
-                  </span>
-                  <span className="stars" aria-label={`${stars} of 3 stars`}>
-                    {[0, 1, 2].map((i) => (
-                      <span key={i} className={i < stars ? "on" : ""}>
-                        ★
-                      </span>
-                    ))}
-                  </span>
-                  <span className="card-cta">
-                    {p.learned ? "Practice →" : "Learn →"}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        {LEVELS.map((level) => {
+          const list = openings.filter(
+            (o) =>
+              o.difficulty === level && (filter === "all" || o.side === filter),
+          );
+          if (!list.length) return null;
+          return (
+            <div className="level" key={level}>
+              <div className="level-head">
+                <span className="level-tag">{t.level(level)}</span>
+                <h3>{t.levels[level].title}</h3>
+                <span className="level-blurb">{t.levels[level].blurb}</span>
+              </div>
+              <div className="cards">
+                {list.map((o) => (
+                  <OpeningCard
+                    key={o.id}
+                    opening={o}
+                    step={openings.indexOf(o) + 1}
+                    stars={starsFor(
+                      progress[o.id] ?? { learned: false, practiceRuns: 0 },
+                    )}
+                    isNext={o.id === next?.id}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </section>
 
       <footer className="foot">
-        <span>Made with ♥ for Guy. Progress is saved on this device.</span>
+        <span>{t.footer}</span>
         <button
           className="btn link small"
           onClick={() => {
-            if (window.confirm("Reset all progress on this device?"))
-              resetAllProgress();
+            if (window.confirm(t.resetConfirm)) resetAllProgress();
           }}
         >
-          Reset progress
+          {t.resetProgress}
         </button>
       </footer>
     </div>
+  );
+}
+
+function OpeningCard({
+  opening: o,
+  step,
+  stars,
+  isNext,
+}: {
+  opening: Opening;
+  step: number;
+  stars: number;
+  isNext: boolean;
+}) {
+  const t = useT();
+  const mastered = stars === 3;
+  return (
+    <button
+      type="button"
+      className={`card${isNext ? " up-next" : ""}${mastered ? " mastered" : ""}`}
+      onClick={() => navigate({ page: "learn", id: o.id })}
+    >
+      <div className="card-top">
+        <span className="card-emoji" aria-hidden>
+          {o.emoji}
+        </span>
+        {isNext && <span className="tag next">{t.upNext}</span>}
+        {mastered && <span className="tag done">{t.mastered}</span>}
+        <span className="card-step" aria-label={t.step(step)}>
+          {step}
+        </span>
+      </div>
+      <h4>{o.name}</h4>
+      <p className="card-tag">{o.tagline}</p>
+      <div className="card-foot">
+        <span className={`side-chip ${o.side === "white" ? "w" : "b"}`}>
+          {t.side(o.side)}
+        </span>
+        <Stars count={stars} />
+      </div>
+    </button>
   );
 }

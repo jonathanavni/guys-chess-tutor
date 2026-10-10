@@ -1,4 +1,6 @@
 import { useSyncExternalStore } from "react";
+import { OPENINGS } from "../data/openings";
+import type { Opening } from "../data/types";
 
 const KEY = "guys-chess-tutor:progress:v1";
 
@@ -91,6 +93,21 @@ export function starsFor(p: OpeningProgress): number {
   if (p.quizTotal && p.quizBest === p.quizTotal && p.bestMistakes === 0)
     stars++;
   return stars;
+}
+
+/**
+ * Where the learning path continues: the first opening not yet learned, else the first not
+ * yet mastered (OPENINGS is ordered simplest → hardest). Undefined when everything is mastered.
+ */
+export function upNext(
+  progress: ProgressMap,
+  skipId?: string,
+): Opening | undefined {
+  const list = OPENINGS.filter((o) => o.id !== skipId);
+  const p = (o: Opening) => progress[o.id] ?? EMPTY;
+  return (
+    list.find((o) => !p(o).learned) ?? list.find((o) => starsFor(p(o)) < 3)
+  );
 }
 
 function subscribe(cb: () => void) {

@@ -4,6 +4,7 @@ import { allFens } from "../lib/chess";
 import { recordQuiz } from "../lib/progress";
 import { Board } from "./Board";
 import { Tutor } from "./Tutor";
+import { useT } from "../lib/i18n";
 
 /** Phase 4: check understanding — multiple choice about the *why* behind the moves. */
 export function Quiz({
@@ -13,6 +14,7 @@ export function Quiz({
   opening: Opening;
   onDone: (score: number, total: number) => void;
 }) {
+  const t = useT();
   const fens = useMemo(() => allFens(opening), [opening]);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
@@ -42,19 +44,19 @@ export function Quiz({
   };
 
   return (
-    <div className="lesson-grid">
+    <div className="lesson-grid quiz-grid">
       <div className="board-col">
         <Board fen={fens[ply]} orientation={opening.side} />
         <div className="board-controls">
           <span className="board-counter">
-            Question {Math.min(index + 1, total)} of {total}
+            {t.questionOf(Math.min(index + 1, total), total)}
           </span>
           {finished ? (
             <button
               className="btn primary"
               onClick={() => onDone(score, total)}
             >
-              See my results →
+              {t.seeResults}
             </button>
           ) : (
             <button
@@ -62,7 +64,7 @@ export function Quiz({
               onClick={next}
               disabled={picked === null}
             >
-              {index + 1 >= total ? "Finish →" : "Next question →"}
+              {index + 1 >= total ? t.finish : t.nextQuestion}
             </button>
           )}
         </div>
@@ -70,28 +72,18 @@ export function Quiz({
 
       <div className="panel-col">
         {finished ? (
-          <Tutor mood="star" title={`Quiz done: ${score} out of ${total}!`}>
-            <p>
-              {score === total
-                ? "You understand the ideas, not just the moves. That is what makes an opening really yours."
-                : "Nice work. Re‑read the ideas you missed — understanding the why is what makes the moves stick."}
-            </p>
+          <Tutor mood="star" title={t.quizDone(score, total)}>
+            <p>{score === total ? t.quizPerfect : t.quizGood}</p>
           </Tutor>
         ) : (
           <Tutor
             mood={picked === null ? "think" : correct ? "happy" : "oops"}
             title={
-              picked === null
-                ? q.question
-                : correct
-                  ? "Correct! 🎯"
-                  : "Not quite."
+              picked === null ? q.question : correct ? t.correct : t.notQuite
             }
           >
             {picked === null ? (
-              <p className="muted">
-                Look at the board if it helps, then pick an answer.
-              </p>
+              <p className="muted">{t.lookAtBoard}</p>
             ) : (
               <p>{q.explanation}</p>
             )}

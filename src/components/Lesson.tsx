@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Opening } from "../data/types";
 import { updateProgress } from "../lib/progress";
 import { navigate } from "../lib/router";
+import { useT } from "../lib/i18n";
 import { Intro } from "./Intro";
 import { Walkthrough } from "./Walkthrough";
 import { Practice } from "./Practice";
@@ -10,16 +11,11 @@ import { Complete } from "./Complete";
 
 type Phase = "intro" | "learn" | "practice" | "quiz" | "done";
 
-const STEPS: { key: Phase; label: string }[] = [
-  { key: "intro", label: "Meet it" },
-  { key: "learn", label: "Walk through" },
-  { key: "practice", label: "Play it" },
-  { key: "quiz", label: "Quiz" },
-  { key: "done", label: "Done" },
-];
+const STEPS: Phase[] = ["intro", "learn", "practice", "quiz", "done"];
 
 /** The lesson shell: header + phase stepper + the current phase. */
 export function Lesson({ opening }: { opening: Opening }) {
+  const t = useT();
   const [phase, setPhase] = useState<Phase>("intro");
   const [mistakes, setMistakes] = useState<number | null>(null);
   const [quiz, setQuiz] = useState<{ score: number; total: number } | null>(
@@ -39,105 +35,102 @@ export function Lesson({ opening }: { opening: Opening }) {
     window.scrollTo({ top: 0 });
   }, [phase]);
 
-  const stepIndex = STEPS.findIndex((s) => s.key === phase);
+  const stepIndex = STEPS.indexOf(phase);
 
   return (
     <div className="lesson">
       <header className="lesson-header">
         <button
-          className="btn ghost back"
+          className="icon-btn back"
           onClick={() => navigate({ page: "home" })}
+          aria-label={t.allOpenings}
+          title={t.allOpenings}
         >
-          ← All openings
+          {t.backIcon}
         </button>
+        <span className="lesson-emoji" aria-hidden>
+          {opening.emoji}
+        </span>
         <div className="lesson-title">
-          <span className="lesson-emoji" aria-hidden>
-            {opening.emoji}
-          </span>
-          <div>
-            <h1>{opening.name}</h1>
-            <div className="lesson-sub">
-              {opening.subtitle} ·{" "}
-              <span
-                className={`side-chip ${opening.side === "white" ? "w" : "b"}`}
-              >
-                {opening.side === "white" ? "You play White" : "You play Black"}
-              </span>
-            </div>
+          <h1>{opening.name}</h1>
+          <div className="lesson-sub">
+            {opening.subtitle}
+            <span
+              className={`side-chip ${opening.side === "white" ? "w" : "b"}`}
+            >
+              {t.youPlay(opening.side)}
+            </span>
           </div>
         </div>
-        <button
-          className="btn ghost"
-          onClick={() => navigate({ page: "home" })}
-        >
-          Switch opening
-        </button>
       </header>
 
-      <ol className="stepper" aria-label="Lesson progress">
+      <ol className="stepper" aria-label={t.lessonProgress}>
         {STEPS.map((s, i) => (
           <li
-            key={s.key}
+            key={s}
             className={
               i < stepIndex ? "done" : i === stepIndex ? "current" : ""
             }
-            onClick={() => i < stepIndex && s.key !== "done" && setPhase(s.key)}
+            aria-current={i === stepIndex ? "step" : undefined}
+            onClick={() => i < stepIndex && s !== "done" && setPhase(s)}
           >
             <span className="step-dot">{i < stepIndex ? "✓" : i + 1}</span>
-            <span className="step-label">{s.label}</span>
+            <span className="step-label">{t.steps[s]}</span>
           </li>
         ))}
       </ol>
 
-      {phase === "intro" && (
-        <Intro
-          opening={opening}
-          onStart={() => setPhase("learn")}
-          onSkip={() => setPhase("practice")}
-        />
-      )}
-      {phase === "learn" && (
-        <Walkthrough
-          opening={opening}
-          onDone={() => {
-            updateProgress(opening.id, { learned: true });
-            setPhase("practice");
-          }}
-          onSkip={() => setPhase("practice")}
-        />
-      )}
-      {phase === "practice" && (
-        <Practice
-          key={practiceKey}
-          opening={opening}
-          onDone={(m) => {
-            setMistakes(m);
-            updateProgress(opening.id, { learned: true });
-            setPhase("quiz");
-          }}
-        />
-      )}
-      {phase === "quiz" && (
-        <Quiz
-          opening={opening}
-          onDone={(score, total) => {
-            setQuiz({ score, total });
-            setPhase("done");
-          }}
-        />
-      )}
-      {phase === "done" && (
-        <Complete
-          opening={opening}
-          mistakes={mistakes}
-          quiz={quiz}
-          onPracticeAgain={() => {
-            setPracticeKey((k) => k + 1);
-            setPhase("practice");
-          }}
-          onRetakeQuiz={() => setPhase("quiz")}
-        />
-      )}
+      <div className="phase" key={phase}>
+        {phase === "intro" && (
+          <Intro
+            opening={opening}
+            onStart={() => setPhase("learn")}
+            onSkip={() => setPhase("practice")}
+          />
+        )}
+        {phase === "learn" && (
+          <Walkthrough
+            opening={opening}
+            onDone={() => {
+              updateProgress(opening.id, { learned: true });
+              setPhase("practice");
+            }}
+            onSkip={() => setPhase("practice")}
+          />
+        )}
+        {phase === "practice" && (
+          <Practice
+            key={practiceKey}
+            opening={opening}
+            onDone={(m) => {
+              setMistakes(m);
+              updateProgress(opening.id, { learned: true });
+              setPhase("quiz");
+            }}
+          />
+        )}
+        {phase === "quiz" && (
+          <Quiz
+            opening={opening}
+            onDone={(score, total) => {
+              setQuiz({ score, total });
+              setPhase("done");
+            }}
+          />
+        )}
+        {phase === "done" && (
+          <Complete
+            opening={opening}
+            mistakes={mistakes}
+            quiz={quiz}
+            onPracticeAgain={() => {
+              setPracticeKey((k) => k + 1);
+              setPhase("practice");
+            }}
+            onRetakeQuiz={() => setPhase("quiz")}
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import type { Opening } from "../data/types";
+import { useT } from "../lib/i18n";
 
 /** Compact move list. `ply` = number of plies played so far; clicking jumps (if onJump given). */
 export function MoveList({
@@ -13,6 +14,7 @@ export function MoveList({
   /** In practice mode we only reveal moves already played. */
   revealUpTo?: number;
 }) {
+  const t = useT();
   const pairs: { n: number; w?: number; b?: number }[] = [];
   opening.moves.forEach((_, i) => {
     const n = Math.floor(i / 2);
@@ -39,14 +41,14 @@ export function MoveList({
   };
 
   return (
-    <div className="movelist" aria-label="Moves">
+    <div className="movelist" aria-label={t.moves} dir="ltr">
       {onJump && (
         <button
           type="button"
           className={`mv start${ply === 0 ? " active" : ""}`}
           onClick={() => onJump(0)}
         >
-          Start
+          {t.start}
         </button>
       )}
       {pairs.map((p) => (

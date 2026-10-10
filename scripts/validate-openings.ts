@@ -4,6 +4,7 @@
  */
 import { Chess } from "chess.js";
 import { OPENINGS } from "../src/data/openings";
+import { OPENINGS_HE } from "../src/data/openings.he";
 
 const SQUARE = /^[a-h][1-8]$/;
 let errors = 0;
@@ -46,6 +47,51 @@ for (const o of OPENINGS) {
   if (ids > 1) fail(`duplicate id ${o.id}`);
   console.log(`✓ ${o.name} (${o.moves.length} plies, ${o.quiz.length} quiz)`);
 }
+// Hebrew text must mirror the English structure, and avoid notation that breaks in RTL text.
+const RTL_TRAPS = /\d\.\s*[KQRBNa-hO]|[a-h][1-8][+#]|O-O[+#]/;
+for (const o of OPENINGS) {
+  const he = OPENINGS_HE[o.id];
+  if (!he) {
+    fail(`${o.id}: missing Hebrew translation`);
+    continue;
+  }
+  if (he.moves.length !== o.moves.length)
+    fail(
+      `${o.id} (he): ${he.moves.length} moves, English has ${o.moves.length}`,
+    );
+  o.moves.forEach((m, i) => {
+    if (!he.moves[i]?.explanation?.trim())
+      fail(`${o.id} (he): move ${i + 1} has no explanation`);
+    if (!!m.hint !== !!he.moves[i]?.hint)
+      fail(`${o.id} (he): move ${i + 1} hint mismatch`);
+  });
+  if (he.quiz.length !== o.quiz.length) fail(`${o.id} (he): quiz length`);
+  o.quiz.forEach((q, i) => {
+    if (he.quiz[i]?.options.length !== q.options.length)
+      fail(`${o.id} (he): quiz ${i + 1} option count`);
+  });
+  const texts = [
+    he.name,
+    he.subtitle,
+    he.tagline,
+    he.funFact ?? "",
+    ...he.intro,
+    ...he.keyIdeas,
+    ...he.moves.flatMap((m) => [m.explanation, m.hint ?? ""]),
+    ...he.quiz.flatMap((q) => [q.question, q.explanation, ...q.options]),
+  ];
+  for (const t of texts)
+    if (RTL_TRAPS.test(t))
+      fail(`${o.id} (he): RTL-unsafe notation in "${t.slice(0, 60)}…"`);
+}
+for (const id of Object.keys(OPENINGS_HE))
+  if (!OPENINGS.some((o) => o.id === id)) fail(`Hebrew has unknown id ${id}`);
+
+// OPENINGS order is the learning path shown on Home, so difficulty must never go down.
+OPENINGS.forEach((o, i) => {
+  if (i > 0 && o.difficulty < OPENINGS[i - 1].difficulty)
+    fail(`${o.id}: difficulty ${o.difficulty} comes after a harder opening`);
+});
 if (errors) {
   console.error(`\n${errors} problem(s)`);
   process.exit(1);
