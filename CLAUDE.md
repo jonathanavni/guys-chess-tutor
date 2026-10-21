@@ -45,6 +45,7 @@ src/
     Home.tsx           catalog + hero + progress
     Lesson.tsx         phase shell: intro → learn → practice → quiz → done
     Intro / Walkthrough / Practice / Quiz / Complete   one file per phase
+    Tricky.tsx         "Fix your tricky moves" drill (#/tricky); reviews reuse Lesson in practice-only mode (#/review/<id>)
     Board.tsx          react-chessboard wrapper: arrows, highlights, click‑ or drag‑to‑move
     Tutor.tsx          the speech bubble + avatar mood
     MoveList.tsx

@@ -14,7 +14,13 @@ import {
   sideToMove,
   tryMove,
 } from "../lib/chess";
-import { recordPractice } from "../lib/progress";
+import {
+  daysUntilReview,
+  getProgress,
+  recordPractice,
+  useOpeningProgress,
+} from "../lib/progress";
+import { celebrate } from "../lib/celebrate";
 import { Board } from "./Board";
 import { Tutor, type Mood } from "./Tutor";
 import { MoveList } from "./MoveList";
@@ -34,13 +40,16 @@ type Status =
 /**
  * Phase 3: the learner plays their side from memory; the tutor plays the other side,
  * checks every move, and gives escalating hints when the learner strays from the line.
+ * In `review` mode (spaced-repetition replay) it celebrates at the end and says when to come back.
  */
 export function Practice({
   opening,
   onDone,
+  review = false,
 }: {
   opening: Opening;
   onDone: (mistakes: number) => void;
+  review?: boolean;
 }) {
   const t = useT();
   const fens = useMemo(() => allFens(opening), [opening]);
@@ -64,6 +73,13 @@ export function Practice({
   } | null>(null);
   const timer = useRef<number | null>(null);
   const recorded = useRef(false);
+  // Plies that needed help this run (wrong move or hint) — they become "tricky moves".
+  const slipped = useRef(new Set<number>());
+  // Moves that tripped the learner up last time, read once so the warning doesn't vanish mid-run.
+  const [trickyBefore] = useState(
+    () => new Set(getProgress(opening.id).tricky),
+  );
+  const progress = useOpeningProgress(opening.id);
 
   const isLearnerTurn = ply < total && sideToMove(ply) === learner;
   const bookMove = ply < total ? opening.moves[ply] : null;
@@ -72,6 +88,7 @@ export function Practice({
   const restart = useCallback(() => {
     if (timer.current) window.clearTimeout(timer.current);
     recorded.current = false;
+    slipped.current.clear();
     setPly(0);
     setMistakes(0);
     setStatus({ kind: "your-turn", wrongTries: 0, hintLevel: 0 });
@@ -85,7 +102,8 @@ export function Practice({
       setStatus({ kind: "done" });
       if (!recorded.current) {
         recorded.current = true;
-        recordPractice(opening.id, mistakes);
+        recordPractice(opening.id, mistakes, [...slipped.current]);
+        if (review) celebrate();
       }
       return;
     }
@@ -122,6 +140,7 @@ export function Practice({
       return true;
     }
     // Legal but not the book move.
+    slipped.current.add(ply);
     setMistakes((m) => m + 1);
     setShake(true);
     window.setTimeout(() => setShake(false), 450);
@@ -139,6 +158,7 @@ export function Practice({
   };
 
   const askHint = () => {
+    slipped.current.add(ply);
     setStatus((s) => {
       const prev =
         s.kind === "your-turn"
@@ -179,7 +199,11 @@ export function Practice({
         : mistakes <= 2
           ? t.greatJob(mistakes)
           : t.madeIt(mistakes);
-    body = t.knowFirst(Math.ceil(total / 2), opening.name);
+    body = review ? (
+      <p>{t.nextReview(daysUntilReview(progress) ?? 1)}</p>
+    ) : (
+      t.knowFirst(Math.ceil(total / 2), opening.name)
+    );
   } else if (status.kind === "opponent") {
     mood = "neutral";
     const played = opening.moves[ply - 1];
@@ -196,6 +220,7 @@ export function Practice({
     body = (
       <>
         <p>{status.explanation}</p>
+        {trickyBefore.has(ply) && <p className="tricky-note">{t.trickyNote}</p>}
         <p className="prompt">{t.yourMovePrompt}</p>
       </>
     );
@@ -213,7 +238,14 @@ export function Practice({
     } else if (wrongTries === 0 && hl === 0) {
       mood = "think";
       title = ply === 0 ? t.firstMove(youAre, opening.name) : t.yourMove;
-      body = <p>{ply === 0 ? t.dragHelp : t.whatDoes(youAre)}</p>;
+      body = (
+        <>
+          {trickyBefore.has(ply) && (
+            <p className="tricky-note">{t.trickyNote}</p>
+          )}
+          <p>{ply === 0 ? t.dragHelp : t.whatDoes(youAre)}</p>
+        </>
+      );
     } else {
       mood = wrongTries > 0 ? "oops" : "think";
       title =
@@ -254,7 +286,7 @@ export function Practice({
           </span>
           {status.kind === "done" ? (
             <button className="btn primary" onClick={() => onDone(mistakes)}>
-              {t.takeQuiz}
+              {review ? t.doneReview : t.takeQuiz}
             </button>
           ) : (
             <button

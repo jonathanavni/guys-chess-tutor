@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 
-/** Tiny hash router: "#/" (home) or "#/learn/<openingId>" so lessons are linkable/shareable. */
-export type Route = { page: "home" } | { page: "learn"; id: string };
+/** Tiny hash router: "#/", "#/learn/<id>", "#/review/<id>", "#/tricky" — linkable/shareable. */
+export type Route =
+  | { page: "home" }
+  | { page: "tricky" }
+  | { page: "learn" | "review"; id: string };
 
 function parse(hash: string): Route {
-  const m = hash.match(/^#\/learn\/([\w-]+)/);
-  return m ? { page: "learn", id: m[1] } : { page: "home" };
+  if (hash.startsWith("#/tricky")) return { page: "tricky" };
+  const m = hash.match(/^#\/(learn|review)\/([\w-]+)/);
+  return m ? { page: m[1] as "learn" | "review", id: m[2] } : { page: "home" };
 }
 
 export function useRoute(): Route {
@@ -19,6 +23,9 @@ export function useRoute(): Route {
 }
 
 export function navigate(route: Route) {
-  window.location.hash = route.page === "home" ? "/" : `/learn/${route.id}`;
+  window.location.hash =
+    "id" in route
+      ? `/${route.page}/${route.id}`
+      : `/${route.page === "home" ? "" : "tricky"}`;
   window.scrollTo({ top: 0 });
 }

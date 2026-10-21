@@ -984,6 +984,48 @@ em {
   font-weight: 600;
 }
 
+/* ─── Review / tricky moves ────────────────────────────────────────────── */
+.review {
+  margin-bottom: 24px;
+}
+.review-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.review h2 {
+  font-size: 1.6rem;
+}
+.review-list {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.review-list .next-item {
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.next-item.tricky {
+  background: var(--warm-soft);
+  border-color: #f6dfb8;
+}
+.tag.review {
+  background: var(--warm-soft);
+  color: var(--warm);
+}
+.tutor-body p.tricky-note {
+  color: var(--warm);
+  font-weight: 500;
+}
+.tricky-done {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+  max-width: 560px;
+}
+
 /* ─── Animations ───────────────────────────────────────────────────────── */
 @keyframes fade-up {
   from {

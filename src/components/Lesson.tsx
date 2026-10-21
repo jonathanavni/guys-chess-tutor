@@ -13,10 +13,19 @@ type Phase = "intro" | "learn" | "practice" | "quiz" | "done";
 
 const STEPS: Phase[] = ["intro", "learn", "practice", "quiz", "done"];
 
-/** The lesson shell: header + phase stepper + the current phase. */
-export function Lesson({ opening }: { opening: Opening }) {
+/**
+ * The lesson shell: header + phase stepper + the current phase.
+ * `review` = a quick spaced-repetition replay: practice only, then back home.
+ */
+export function Lesson({
+  opening,
+  review = false,
+}: {
+  opening: Opening;
+  review?: boolean;
+}) {
   const t = useT();
-  const [phase, setPhase] = useState<Phase>("intro");
+  const [phase, setPhase] = useState<Phase>(review ? "practice" : "intro");
   const [mistakes, setMistakes] = useState<number | null>(null);
   const [quiz, setQuiz] = useState<{ score: number; total: number } | null>(
     null,
@@ -25,10 +34,10 @@ export function Lesson({ opening }: { opening: Opening }) {
 
   // Reset when switching openings via URL.
   useEffect(() => {
-    setPhase("intro");
+    setPhase(review ? "practice" : "intro");
     setMistakes(null);
     setQuiz(null);
-  }, [opening.id]);
+  }, [opening.id, review]);
 
   // Each phase starts at the top of the page (matters on phones).
   useEffect(() => {
@@ -55,6 +64,7 @@ export function Lesson({ opening }: { opening: Opening }) {
           <h1>{opening.name}</h1>
           <div className="lesson-sub">
             {opening.subtitle}
+            {review && <span className="tag review">{t.reviewTag}</span>}
             <span
               className={`side-chip ${opening.side === "white" ? "w" : "b"}`}
             >
@@ -64,21 +74,23 @@ export function Lesson({ opening }: { opening: Opening }) {
         </div>
       </header>
 
-      <ol className="stepper" aria-label={t.lessonProgress}>
-        {STEPS.map((s, i) => (
-          <li
-            key={s}
-            className={
-              i < stepIndex ? "done" : i === stepIndex ? "current" : ""
-            }
-            aria-current={i === stepIndex ? "step" : undefined}
-            onClick={() => i < stepIndex && s !== "done" && setPhase(s)}
-          >
-            <span className="step-dot">{i < stepIndex ? "✓" : i + 1}</span>
-            <span className="step-label">{t.steps[s]}</span>
-          </li>
-        ))}
-      </ol>
+      {!review && (
+        <ol className="stepper" aria-label={t.lessonProgress}>
+          {STEPS.map((s, i) => (
+            <li
+              key={s}
+              className={
+                i < stepIndex ? "done" : i === stepIndex ? "current" : ""
+              }
+              aria-current={i === stepIndex ? "step" : undefined}
+              onClick={() => i < stepIndex && s !== "done" && setPhase(s)}
+            >
+              <span className="step-dot">{i < stepIndex ? "✓" : i + 1}</span>
+              <span className="step-label">{t.steps[s]}</span>
+            </li>
+          ))}
+        </ol>
+      )}
 
       <div className="phase" key={phase}>
         {phase === "intro" && (
@@ -102,7 +114,9 @@ export function Lesson({ opening }: { opening: Opening }) {
           <Practice
             key={practiceKey}
             opening={opening}
+            review={review}
             onDone={(m) => {
+              if (review) return navigate({ page: "home" });
               setMistakes(m);
               updateProgress(opening.id, { learned: true });
               setPhase("quiz");

@@ -5,6 +5,7 @@ import { toggleMuted, useMuted } from "./lib/celebrate";
 import { localize, setLang, useLang, useT, type Lang } from "./lib/i18n";
 import { Home } from "./components/Home";
 import { Lesson } from "./components/Lesson";
+import { Tricky } from "./components/Tricky";
 
 // Tiny inline flags (flag emoji don't render on Windows).
 const US_FLAG = (
@@ -45,7 +46,7 @@ export default function App() {
   const muted = useMuted();
   const lang = useLang();
   const t = useT();
-  const found = route.page === "learn" ? getOpening(route.id) : undefined;
+  const found = "id" in route ? getOpening(route.id) : undefined;
   const opening = found && localize(found, lang);
 
   return (
@@ -88,8 +89,17 @@ export default function App() {
           </button>
         </div>
       </nav>
-      <main className="page" key={opening?.id ?? "home"}>
-        {opening ? <Lesson key={opening.id} opening={opening} /> : <Home />}
+      <main
+        className="page"
+        key={opening ? `${route.page}:${opening.id}` : route.page}
+      >
+        {opening ? (
+          <Lesson opening={opening} review={route.page === "review"} />
+        ) : route.page === "tricky" ? (
+          <Tricky />
+        ) : (
+          <Home />
+        )}
       </main>
     </>
   );

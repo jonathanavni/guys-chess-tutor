@@ -2,14 +2,15 @@
 
 ## Current State (2026-10-10)
 
-**v0.2 shipped.** 12 openings ordered as a learning path (Level 1–3), confetti + fanfare on finishing a lesson (mute toggle), full redesign (cool slate/teal, Lexend), English/Hebrew with RTL (Rubik font), mobile audit across 320px–tablet + landscape in both languages.
+**v0.2 shipped.** 12 openings ordered as a learning path (Level 1–3), confetti + fanfare on finishing a lesson (mute toggle), full redesign (cool slate/teal, Lexend), English/Hebrew with RTL (Rubik font), mobile audit across 320px–tablet + landscape in both languages. Live on GitHub Pages (commit aad9901, deploy verified).
 
-
-**v0.1 shipped locally.** Full loop works: choose opening → intro → guided walkthrough → practice (learner plays, tutor checks + hints, plays opponent) → 3‑question quiz → completion with stars. 8 openings (5 White, 3 Black). Progress persists in localStorage. Responsive (tutor above board on phones). Zero console errors. `npm run build` passes (validator + typecheck).
+_v0.1 (2026-08-15):_ Full loop works: choose opening → intro → guided walkthrough → practice (learner plays, tutor checks + hints, plays opponent) → 3‑question quiz → completion with stars. 8 openings (5 White, 3 Black). Progress persists in localStorage. Responsive (tutor above board on phones). Zero console errors. `npm run build` passes (validator + typecheck).
 
 **Not yet done**
 - [x] Deployed to GitHub Pages: https://jonathanavni.github.io/guys-chess-tutor/ (auto‑deploys on push to `main` via `.github/workflows/deploy.yml`)
 - [ ] Guy plays it for real → collect feedback on tone, pace, difficulty
+- [ ] Tap-through on a real iPhone + Android (mobile audit was emulated Chromium with touch)
+- [ ] `npm audit` flags `source-map-js` (build-time only, pre-existing) — run `npm audit fix` when convenient
 
 **Next up (candidates — pick with Jonathan)**
 - [x] Sound/confetti on completing a lesson (every finish, slips or not; mute toggle)
@@ -18,7 +19,7 @@
 - [x] Hebrew language support (EN/HE toggle, RTL)
 - [ ] Native-speaker read-through of the Hebrew lesson text with Guy
 - [ ] Sidelines: "What if Black takes the gambit pawn?" mini‑branches inside a lesson
-- [ ] Spaced repetition nudge on Home ("Italian Game — practiced 4 days ago, play it again?")
+- [x] Spaced repetition: "Time to review" on Home (review = practice-only replay) + "Fix your tricky moves" drill — shipped 2026-10-20
 - [ ] Tactics module (v2): puzzles by theme (fork, pin, back rank), reuse Board + Tutor + progress
 - [ ] Optional name personalization ("Hi Guy!" → whoever's playing) — trivial, no auth needed
 
@@ -42,3 +43,7 @@
 - **2026-10-10 — Celebrate every finished lesson**, not just mastery (user call: a 9-year-old should get the party even with a slip). Fanfare is synthesized with Web Audio — no audio files.
 - **2026-10-10 — i18n without a library.** UI strings in `src/data/strings.tsx`, Hebrew lesson text in `src/data/openings.he.ts` keyed by id; validator keeps it in sync and bans RTL-breaking notation ("1.e4", "Qf3+"). Hebrew terms: מהלך (move), חיל (pawn). Moves stay in English letters. Gender-neutral phrasing where natural.
 - **2026-10-10 — Fonts bundled via @fontsource** (Lexend, Rubik for Hebrew) — no third-party font requests.
+- **2026-10-10 — Mobile: tutor stays above the board in portrait** (feedback visible right after each move), at the cost of a little scrolling on small phones. Landscape phones switch to side-by-side with the board sized to screen height. Quiz on phones: question → answers → Next → board.
+- **2026-10-10 — Hover effects only under `@media (hover: hover)`** so taps on touchscreens don't leave cards/answers looking "stuck" selected.
+- **2026-10-20 — Spaced repetition, kept tiny.** Per opening: `reviewLevel` → REVIEW_DAYS `[1,3,7,14,30]`, due at local midnight. Every finished practice run counts. Slip (wrong move *or* hint) → down a level; clean run moves up only if it was due (replaying early doesn't skip ahead); first run → tomorrow. Inspired by Chessable's MoveTrainer, but per opening, not per move.
+- **2026-10-20 — Tricky moves = learner plies needing help in the last full run.** Replaced on each completed run; the drill (`#/tricky`, max 8) clears a move only when it's played right first try with no hint. Practice warns "this tripped you up last time" on those plies.

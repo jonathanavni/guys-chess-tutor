@@ -190,6 +190,29 @@ const en = {
   nextOnPath: "Next on your path",
   levelAs: (level: number, side: Side) =>
     `Level ${level} · as ${side === "white" ? "White" : "Black"}`,
+
+  // Review (spaced repetition) + tricky moves
+  reviewTitle: "Time to review 🔁",
+  reviewBlurb: "A quick replay from memory keeps your openings fresh.",
+  reviewItem: (side: Side) =>
+    `Play it from memory · as ${side === "white" ? "White" : "Black"}`,
+  reviewTag: "🔁 Review",
+  doneReview: "Done ✓",
+  nextReview: (days: number) =>
+    days <= 1
+      ? "Let's play it again tomorrow, so it really sticks."
+      : `Next review in ${days} days. Each clean run makes the gap longer — that's how it sticks for good.`,
+  trickyNote: "⚠️ This move tripped you up last time. Take your time!",
+  trickyTitle: "Fix your tricky moves",
+  trickySub: "The moves that tripped you up, one at a time.",
+  trickyCount: (n: number) =>
+    n === 1 ? "1 move to practice again" : `${n} moves to practice again`,
+  trickyDone: (fixed: number, total: number) =>
+    fixed === total ? "All fixed! 🎉" : `${fixed} of ${total} fixed!`,
+  trickyDoneBody:
+    "Any move you needed a hint for stays on the list, so we can try it again another day.",
+  trickyNone: "No tricky moves right now 🎉",
+  trickyNoneBody: "When a move trips you up in practice, it'll show up here.",
 };
 
 export type Strings = typeof en;
@@ -357,6 +380,28 @@ const he: Strings = {
   nextOnPath: "הבא במסלול שלך",
   levelAs: (level, side) =>
     `שלב ${level} · בצד ה${side === "white" ? "לבן" : "שחור"}`,
+
+  reviewTitle: "זמן לחזרה 🔁",
+  reviewBlurb: "סיבוב קצר מהזיכרון שומר על הפתיחות טריות.",
+  reviewItem: (side) =>
+    `משחקים מהזיכרון · בצד ה${side === "white" ? "לבן" : "שחור"}`,
+  reviewTag: "🔁 חזרה",
+  doneReview: "סיימתי ✓",
+  nextReview: (days) =>
+    days <= 1
+      ? "נשחק את זה שוב מחר, כדי שזה באמת יישב."
+      : `החזרה הבאה בעוד ${days} ימים. כל סיבוב נקי מאריך את ההפסקה — ככה זה נשאר בראש לתמיד.`,
+  trickyNote: "⚠️ המהלך הזה הכשיל אותך בפעם הקודמת. אין לחץ!",
+  trickyTitle: "מתקנים מהלכים מבלבלים",
+  trickySub: "המהלכים שהכשילו אותך, אחד אחד.",
+  trickyCount: (n) =>
+    n === 1 ? "מהלך אחד לתרגל שוב" : `${n} מהלכים לתרגל שוב`,
+  trickyDone: (fixed, total) =>
+    fixed === total ? "הכול תוקן! 🎉" : `${fixed} מתוך ${total} תוקנו!`,
+  trickyDoneBody:
+    "מהלך שהיה צריך בשבילו רמז נשאר ברשימה, כדי שננסה אותו שוב ביום אחר.",
+  trickyNone: "אין כרגע מהלכים מבלבלים 🎉",
+  trickyNoneBody: "כשמהלך יכשיל אותך בתרגול, הוא יופיע כאן.",
 };
 
 export const STRINGS = { en, he };

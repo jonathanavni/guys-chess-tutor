@@ -16,6 +16,11 @@ export interface OpeningProgress {
   practiceRuns: number;
   /** ISO date of last activity */
   lastPlayed?: string;
+  /** Spaced repetition: index into REVIEW_DAYS, and when the next review is due (ISO) */
+  reviewLevel?: number;
+  reviewDue?: string;
+  /** Learner plies slipped on (wrong move or hint) in the last full run — "tricky moves" */
+  tricky?: number[];
 }
 
 export type ProgressMap = Record<string, OpeningProgress>;
@@ -61,15 +66,82 @@ export function updateProgress(id: string, patch: Partial<OpeningProgress>) {
   });
 }
 
-export function recordPractice(id: string, mistakes: number) {
+/** Days until the next review at each level: a clean run moves up a level, a slip moves down one. */
+export const REVIEW_DAYS = [1, 3, 7, 14, 30];
+
+export function isDue(p: OpeningProgress): boolean {
+  return !!p.reviewDue && Date.now() >= Date.parse(p.reviewDue);
+}
+
+/** Local midnight `days` from today, so "due tomorrow" means any time tomorrow. */
+function daysFromToday(days: number): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + days);
+  return d.toISOString();
+}
+
+/** A finished practice run (lesson or review). `slipped` = learner plies that needed help. */
+export function recordPractice(
+  id: string,
+  mistakes: number,
+  slipped: number[],
+) {
   const cur = getProgress(id);
+  const first = cur.reviewLevel === undefined;
+  const level = cur.reviewLevel ?? 0;
+  // Only a review that was actually due moves you up; replaying early doesn't skip ahead.
+  const nextLevel = slipped.length
+    ? Math.max(0, level - 1)
+    : first
+      ? 0
+      : isDue(cur)
+        ? Math.min(REVIEW_DAYS.length - 1, level + 1)
+        : level;
+  const reschedule = first || slipped.length > 0 || nextLevel !== level;
   updateProgress(id, {
     practiceRuns: cur.practiceRuns + 1,
     bestMistakes:
       cur.bestMistakes === undefined
         ? mistakes
         : Math.min(cur.bestMistakes, mistakes),
+    tricky: slipped,
+    reviewLevel: nextLevel,
+    reviewDue: reschedule
+      ? daysFromToday(REVIEW_DAYS[nextLevel])
+      : cur.reviewDue,
   });
+}
+
+/** A tricky move played right on the first try (no hint) in the drill is no longer tricky. */
+export function fixTricky(id: string, ply: number) {
+  const cur = getProgress(id);
+  updateProgress(id, { tricky: (cur.tricky ?? []).filter((p) => p !== ply) });
+}
+
+/** Whole days until the next review (0 = today). */
+export function daysUntilReview(p: OpeningProgress): number | undefined {
+  if (!p.reviewDue) return undefined;
+  return Math.max(
+    0,
+    Math.round(
+      (Date.parse(p.reviewDue) - Date.parse(daysFromToday(0))) / 864e5,
+    ),
+  );
+}
+
+/** Openings due for review, in learning-path order. */
+export function dueReviews(progress: ProgressMap): Opening[] {
+  return OPENINGS.filter((o) => progress[o.id] && isDue(progress[o.id]));
+}
+
+/** Tricky moves for one warm-up (at most 8 — a couple of minutes), in learning-path order. */
+export function trickyMoves(
+  progress: ProgressMap,
+): { opening: Opening; ply: number }[] {
+  return OPENINGS.flatMap((o) =>
+    (progress[o.id]?.tricky ?? []).map((ply) => ({ opening: o, ply })),
+  ).slice(0, 8);
 }
 
 export function recordQuiz(id: string, score: number, total: number) {
